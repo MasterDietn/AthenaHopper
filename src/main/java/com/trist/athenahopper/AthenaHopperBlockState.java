@@ -261,17 +261,10 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             if (slot == null || slot.isEmpty()) {
                 return true;
             }
-
-            Item slotItem = slot.getItem();
-            if (slotItem != null && slot.getQuantity() < slotItem.getMaxStack()) {
-                // Count space in partially filled slots only if the hopper could actually push
-                // that same item type into the output container (based on current filter mode).
-                if (isItemAllowed(slot)) {
-                    return true;
-                }
-            }
         }
 
+        // "Full" means: no empty slots left. We don't treat partially filled stacks as free capacity,
+        // because that still allows the hopper to "accumulate" while the output isn't actually freeing slots.
         return false;
     }
 
