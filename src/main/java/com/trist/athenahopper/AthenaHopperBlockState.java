@@ -209,72 +209,15 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             }
         }
 
-        // Back-pressure: only pull from above / collect drops if the output container
-        // can still accept at least one more allowed item (empty slot or partial allowed stack).
-        boolean outputAcceptsAnyAllowedItem = canFrontAcceptAnyAllowedItem(frontState);
-
         if (aboveState != null) {
-            if (!outputAcceptsAnyAllowedItem) {
-                return;
-            }
-            boolean moved = pullFrom(aboveState);
+            boolean moved = pullFrom(aboveState, frontState);
             if (moved) {
                 cooldown = PUSH_COOLDOWN;
             }
             return;
         }
 
-        if (!outputAcceptsAnyAllowedItem) {
-            return;
-        }
-        collectItems(world);
-    }
-
-    private boolean canFrontAcceptAnyAllowedItem(BlockState frontState) {
-        if (frontState == null) {
-            return true;
-        }
-
-        if (frontState instanceof ProcessingBenchState benchState) {
-            CombinedItemContainer benchContainer = benchState.getItemContainer();
-            ItemContainer input = benchContainer.getContainer(0);
-            ItemContainer output = benchContainer.getContainer(1);
-            return containerCanAcceptAnyAllowedItem(input) || containerCanAcceptAnyAllowedItem(output);
-        }
-
-        if (frontState instanceof ItemContainerState containerState) {
-            ItemContainer target = containerState.getItemContainer();
-            return containerCanAcceptAnyAllowedItem(target);
-        }
-
-        // Unknown target type => don't block.
-        return true;
-    }
-
-    private boolean containerCanAcceptAnyAllowedItem(ItemContainer container) {
-        if (container == null) {
-            return false;
-        }
-
-        for (short i = 0; i < container.getCapacity(); i++) {
-            ItemStack slot = container.getItemStack(i);
-            if (slot == null || slot.isEmpty()) {
-                // Empty slot => can accept at least one allowed item.
-                return true;
-            }
-
-            Item slotItem = slot.getItem();
-            if (slotItem == null) {
-                continue;
-            }
-
-            // Partially filled stacks only count if the hopper would accept that same item type.
-            if (slot.getQuantity() < slotItem.getMaxStack() && isItemAllowed(slot)) {
-                return true;
-            }
-        }
-
-        return false;
+        collectItems(world, frontState);
     }
 
     protected boolean pushTo(BlockState targetState) {
@@ -294,24 +237,101 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
         return false;
     }
 
-    protected boolean pullFrom(BlockState sourceState) {
+    private boolean canFrontAcceptItemStack(BlockState frontState, ItemStack singleStack) {
+        if (frontState == null) {
+            return true;
+        }
+
+        if (frontState instanceof ProcessingBenchState benchState) {
+            CombinedItemContainer benchContainer = benchState.getItemContainer();
+            ItemContainer input = benchContainer.getContainer(0);
+            ItemContainer output = benchContainer.getContainer(1);
+            return input != null && input.canAddItemStack(singleStack)
+                    || output != null && output.canAddItemStack(singleStack);
+        }
+
+        if (frontState instanceof ItemContainerState containerState) {
+            ItemContainer target = containerState.getItemContainer();
+            return target != null && target.canAddItemStack(singleStack);
+        }
+
+        // Unknown target type => don't block.
+        return true;
+    }
+
+    protected boolean pullFrom(BlockState sourceState, BlockState frontState) {
         if (sourceState instanceof ProcessingBenchState benchState) {
             CombinedItemContainer benchContainer = benchState.getItemContainer();
             ItemContainer output = benchContainer.getContainer(2);
-            return moveFirstItemFromTo(output, itemContainer);
+
+            for (short i = 0; i < output.getCapacity(); i++) {
+                ItemStack stack = output.getItemStack(i);
+                if (stack == null || stack.isEmpty()) {
+                    continue;
+                }
+                if (filter && !isItemAllowed(stack)) {
+                    continue;
+                }
+
+                ItemStack single = stack.withQuantity(1);
+                if (!itemContainer.canAddItemStack(single)) {
+                    continue;
+                }
+                if (!canFrontAcceptItemStack(frontState, single)) {
+                    continue;
+                }
+
+                ItemStackTransaction tx = itemContainer.addItemStack(single);
+                if (!tx.succeeded()) {
+                    continue;
+                }
+
+                // Consume exactly one item from the source stack.
+                output.setItemStackForSlot(i, stack.withQuantity((short) (stack.getQuantity() - 1)), false);
+                return true;
+            }
+
+            return false;
         }
 
         if (sourceState instanceof ItemContainerState containerState) {
             ItemContainer source = containerState.getItemContainer();
-            if (!source.isEmpty()) {
-                return moveFirstItemFromTo(source, itemContainer, filter);
+            if (source.isEmpty()) {
+                return false;
+            }
+
+            for (short i = 0; i < source.getCapacity(); i++) {
+                ItemStack stack = source.getItemStack(i);
+                if (stack == null || stack.isEmpty()) {
+                    continue;
+                }
+                if (filter && !isItemAllowed(stack)) {
+                    continue;
+                }
+
+                ItemStack single = stack.withQuantity(1);
+                if (!itemContainer.canAddItemStack(single)) {
+                    continue;
+                }
+                if (!canFrontAcceptItemStack(frontState, single)) {
+                    continue;
+                }
+
+                ItemStackTransaction tx = itemContainer.addItemStack(single);
+                if (!tx.succeeded()) {
+                    continue;
+                }
+
+                // Consume exactly one item from the source stack.
+                source.setItemStackForSlot(i, stack.withQuantity((short) (stack.getQuantity() - 1)), false);
+                return true;
             }
         }
 
         return false;
     }
 
-    protected void collectItems(World world) {
+    protected void collectItems(World world, BlockState frontState) {
         SimpleItemContainer container = itemContainer;
         WorldChunk chunk = getChunk();
         if (chunk == null || abovePos == null) {
@@ -359,6 +379,13 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
                 continue;
             }
 
+            // Back-pressure based on the specific incoming item:
+            // only take 1 item from the drop if the output can accept 1 of that item.
+            ItemStack single = stack.withQuantity(1);
+            if (!canFrontAcceptItemStack(frontState, single)) {
+                continue;
+            }
+
             Vector3d itemPos = transform.getPosition();
             Vector3d aboveCenter = new Vector3d(abovePos).add(0.5d, 0.0d, 0.5d);
             boolean closeEnough = itemPos.clone().subtract(aboveCenter).closeToZero(0.5d);
@@ -366,29 +393,14 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
                 continue;
             }
 
-            boolean canFit = false;
-            for (short i = 0; i < container.getCapacity(); i++) {
-                ItemStack slot = container.getItemStack(i);
-                if (slot == null || slot.isEmpty()) {
-                    canFit = true;
-                    break;
-                }
-                if (slot.isStackableWith(stack)) {
-                    Item slotItem = slot.getItem();
-                    if (slot.getQuantity() < slotItem.getMaxStack()) {
-                        canFit = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!canFit) {
+            if (!container.canAddItemStack(single)) {
                 continue;
             }
 
+            short remainderQty = (short) Math.max(0, stack.getQuantity() - 1);
             world.execute(() -> {
-                ItemStackTransaction tx = container.addItemStack(stack);
-                ItemStack remainder = tx.getRemainder();
+                ItemStackTransaction tx = container.addItemStack(single);
+                ItemStack remainder = remainderQty > 0 ? stack.withQuantity(remainderQty) : stack.withQuantity((short) 0);
                 if (!tx.succeeded()) {
                     return;
                 }
@@ -415,6 +427,9 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
                     }
                 }
             });
+
+            // Only collect one item per tick to avoid filling the hopper beyond output capacity.
+            return;
         }
     }
 
