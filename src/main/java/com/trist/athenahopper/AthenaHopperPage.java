@@ -7,6 +7,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.item.config.Item;
+import com.hypixel.hytale.builtin.crafting.state.ProcessingBenchState;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -18,6 +19,10 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.inventory.container.CombinedItemContainer;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.math.vector.Vector3i;
 
@@ -45,9 +50,10 @@ public class AthenaHopperPage extends InteractiveCustomUIPage<AthenaHopperPage.A
     private static final String UNDO_BUTTON_SELECTOR = "#UndoButton";
     private static final String MODE_BUTTON_ROOT_SELECTOR = "#ModeButton";
     private static final String EMPTY_STATE_SELECTOR = "#EmptyState";
-    private static final String HELP_TEXT =
-            "Buttons: Modus = Erlauben/Blockieren; Auswahl leeren = Filter löschen; Rückgängig = letzte Änderung rückgängig\n" +
-                    "Suche: listet nur passende Items.";
+    private static final String HELP_TEXT_LINE1 =
+            "Buttons: Modus = Erlauben/Blockieren; Auswahl leeren = Filter löschen; Rückgängig = letzte Änderung rückgängig";
+    private static final String HELP_TEXT_LINE2 =
+            "Suche: listet nur passende Items.";
 
     private final UUID worldId;
     private final Vector3i position;
@@ -99,7 +105,7 @@ public class AthenaHopperPage extends InteractiveCustomUIPage<AthenaHopperPage.A
         commandBuilder.set(SELECTED_COUNT_SELECTOR, buildSelectedCountText(selectedCount));
         commandBuilder.set(SEARCH_INPUT_SELECTOR, searchTerm == null ? "" : searchTerm);
         commandBuilder.set(MODE_STATUS_SELECTOR, buildModeStatusText());
-        commandBuilder.set(INFO_LABEL_SELECTOR, HELP_TEXT);
+        commandBuilder.set(INFO_LABEL_SELECTOR, buildHelpTextWithOutputStatus(funnelState));
 
         boolean showEmptyState = searchTerm == null || searchTerm.isBlank();
         commandBuilder.set(ELEMENT_LIST_SELECTOR + ".Visible", !showEmptyState);
@@ -477,6 +483,56 @@ public class AthenaHopperPage extends InteractiveCustomUIPage<AthenaHopperPage.A
         }
         String trimmed = value.trim().toLowerCase();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String buildHelpTextWithOutputStatus(AthenaHopperBlockState funnelState) {
+        if (funnelState == null) {
+            return HELP_TEXT_LINE1 + "\n" + HELP_TEXT_LINE2;
+        }
+
+        World world = Universe.get().getWorld(worldId);
+        if (world == null || funnelState.frontPos == null) {
+            return HELP_TEXT_LINE1 + "\n" + HELP_TEXT_LINE2 + " | Output: unbekannt";
+        }
+
+        BlockState frontState = world.getState(funnelState.frontPos.x, funnelState.frontPos.y, funnelState.frontPos.z, true);
+        boolean hasEmptySlot = frontState == null || frontHasEmptySlot(frontState);
+        String status = hasEmptySlot ? "Output hat Platz" : "Output voll (kein leerer Slot)";
+        return HELP_TEXT_LINE1 + "\n" + HELP_TEXT_LINE2 + " | " + status;
+    }
+
+    private boolean frontHasEmptySlot(BlockState frontState) {
+        try {
+            if (frontState instanceof ProcessingBenchState benchState) {
+                CombinedItemContainer benchContainer = benchState.getItemContainer();
+                ItemContainer input = benchContainer.getContainer(0);
+                ItemContainer output = benchContainer.getContainer(1);
+                return containerHasEmptySlot(input) || containerHasEmptySlot(output);
+            }
+
+            if (frontState instanceof ItemContainerState containerState) {
+                ItemContainer target = containerState.getItemContainer();
+                return containerHasEmptySlot(target);
+            }
+        } catch (Exception ignored) {
+            // Don't break UI building; fall back to optimistic status.
+        }
+
+        return true;
+    }
+
+    private boolean containerHasEmptySlot(ItemContainer container) {
+        if (container == null) {
+            return false;
+        }
+
+        for (short i = 0; i < container.getCapacity(); i++) {
+            ItemStack slot = container.getItemStack(i);
+            if (slot == null || slot.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean matchesFilter(Item item) {
