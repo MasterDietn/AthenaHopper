@@ -41,7 +41,9 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
     public static final Codec<AthenaHopperBlockState> CODEC;
 
     protected static final Vector3i[] ROTATION_OFFSET;
-    protected static final short PUSH_COOLDOWN = 12;
+    // Lower cooldown to increase throughput (aiming ~3-4x faster).
+    // Effective gap between moves is roughly (PUSH_COOLDOWN + 1) ticks.
+    protected static final short PUSH_COOLDOWN = 3;
 
     public short cooldown;
     protected Vector3i abovePos;
