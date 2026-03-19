@@ -1,0 +1,15 @@
+Button #CategoryButton {
+  LayoutMode: Left;
+  Padding: (Full: 6);
+  Style: (
+    Hovered: (
+      Background: #000000(0.2),
+    )
+  );
+
+  Label #CategoryText {
+    Padding: (Horizontal: 6, Vertical: 2);
+    Style: (RenderBold: true);
+    FlexWeight: 1;
+  }
+}

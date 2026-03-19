@@ -1,0 +1,98 @@
+{
+  "Icon": "Icons/ItemsGenerated/Filtering_AthenaHopper.png",
+  "IconProperties": {
+    "Scale": 0.6,
+    "Rotation": [
+      340,
+      131,
+      20
+    ],
+    "Translation": [
+      1,
+      -13.5
+    ]
+  },
+  "TranslationProperties": {
+    "Name": "server.items.Filtering_AthenaHopper.name",
+    "Description": "server.items.Filtering_AthenaHopper.description"
+  },
+  "BlockType": {
+    "BlockParticleSetId": "Metal",
+    "BlockSoundSetId": "Metal",
+    "CustomModel": "Resources/AthenaHopper.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Resources/AthenaHopper_Filter_Texture.png",
+        "Weight": 1
+      }
+    ],
+    "DrawType": "Model",
+    "Flags": {
+      "IsUsable": true
+    },
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Rocks"
+      }
+    },
+    "Material": "Solid",
+    "Opacity": "Transparent",
+    "ParticleColor": "#1d1b1a",
+    "State": {
+      "Id": "AthenaHopper_Block",
+      "Capacity": 5,
+      "Definitions": {
+        "CloseWindow": {
+          "InteractionSoundEventId": "SFX_Stone_Coffin_Open_Close"
+        },
+        "OpenWindow": {
+          "InteractionSoundEventId": "SFX_Stone_Coffin_Open_Close"
+        }
+      },
+      "IsFilter": true
+    },
+    "Supporting": {
+      "Up": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
+    "VariantRotation": "NESW",
+    "Interactions": {
+      "Primary": "Break_Container",
+      "Use": "Open_Container",
+      "Secondary": "Open_Container"
+    }
+  },
+  "MaxStack": 10,
+  "Categories": [
+    "Furniture.Containers",
+    "Furniture.Benches"
+  ],
+  "PlayerAnimationsId": "Block",
+  "Recipe": {
+    "Input": [
+      {
+        "ItemId": "AthenaHopper",
+        "Quantity": 1
+      },
+      {
+        "ItemId": "Ingredient_Bar_Gold",
+        "Quantity": 5
+      }
+    ],
+    "BenchRequirement": [
+      {
+        "Type": "Crafting",
+        "Categories": [
+          "Workbench_Tinkering"
+        ],
+        "Id": "Workbench",
+        "RequiredTierLevel": 2
+      }
+    ],
+    "TimeSeconds": 3
+  },
+  "ItemSoundSetId": "ISS_Items_Metal"
+}

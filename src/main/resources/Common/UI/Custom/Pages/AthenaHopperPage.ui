@@ -1,0 +1,125 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@DecoratedContainer {
+  Anchor: (Width: 980, Height: 720);
+
+  #Title {
+    Group {
+      $C.@Title {
+        @Text = "Athena Filtersystem";
+      }
+    }
+  }
+
+  #Content {
+    Group {
+      LayoutMode: Left;
+      Padding: (Right: 15, Bottom: 8);
+
+      Label {
+        FlexWeight: 1;
+        Text: "Item";
+        Style: (RenderBold: true);
+      }
+
+      Label #SelectedCount {
+        Text: "Ausgewählt: 0/20";
+        Style: (RenderBold: true);
+      }
+    }
+
+    Group #SelectedRow {
+      LayoutMode: Left;
+      Anchor: (Top: 6, Height: 60);
+
+      Label {
+        Text: "Ausgewählt:";
+        Style: (RenderBold: true);
+        Anchor: (Right: 8);
+      }
+
+      Group #SelectedList {
+        LayoutMode: Left;
+      }
+    }
+
+    Group #SearchBar {
+      LayoutMode: Left;
+      Anchor: (Top: 6, Height: 44);
+
+      Label {
+        Text: "Suche";
+        Style: (RenderBold: true);
+      }
+
+      $C.@TextField #SearchInput {
+        @Anchor = (Right: 8, Height: 38, Width: 560);
+      }
+    }
+
+    Group #ControlsRow {
+      LayoutMode: Left;
+      Anchor: (Top: 6, Height: 44);
+
+      Button #ModeButton {
+        LayoutMode: Left;
+        Anchor: (Right: 8, Height: 40, Width: 180);
+        Padding: (Left: 6, Right: 14, Vertical: 6);
+        Label #Name {
+          Text: "Modus wechseln";
+          Style: (RenderBold: true);
+          FlexWeight: 1;
+        }
+      }
+
+      Label #ModeStatus {
+        Anchor: (Right: 8, Height: 40);
+        Padding: (Horizontal: 6, Vertical: 6);
+        Style: (RenderBold: true);
+      }
+
+      Button #ClearButton {
+        LayoutMode: Left;
+        Anchor: (Right: 8, Height: 40, Width: 170);
+        Padding: (Left: 6, Right: 14, Vertical: 6);
+        Label #Name {
+          Text: "Auswahl leeren";
+          Style: (RenderBold: true);
+          FlexWeight: 1;
+        }
+      }
+
+      Button #UndoButton {
+        LayoutMode: Left;
+        Anchor: (Right: 8, Height: 40, Width: 140);
+        Padding: (Left: 6, Right: 14, Vertical: 6);
+        Label #Name {
+          Text: "Rückgängig";
+          Style: (RenderBold: true);
+          FlexWeight: 1;
+        }
+      }
+
+    }
+
+    Group #InfoRow {
+      LayoutMode: Left;
+      Anchor: (Top: 6, Height: 28);
+
+      Label #InfoLabel {
+        FlexWeight: 1;
+        Style: (TextColor: #ffffff(0.8));
+      }
+    }
+
+    Group #ElementList {
+      FlexWeight: 1;
+      LayoutMode: TopScrolling;
+      ScrollbarStyle: $C.@DefaultScrollbarStyle;
+    }
+  }
+}
+
+$C.@BackButton {}

@@ -1,0 +1,18 @@
+{
+  "Group": "Trist",
+  "Name": "AthenaHopper",
+  "Version": "1.0.0",
+  "Description": "Improved AthenaHopper with selectable item filtering via custom UI.",
+  "Authors": [
+    {
+      "Name": "Trist + Codex"
+    }
+  ],
+  "Website": "",
+  "ServerVersion": "2026.02.17-255364b8e",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "DisabledByDefault": false,
+  "Main": "com.trist.athenahopper.AthenaHopperPlugin",
+  "IncludesAssetPack": true
+}

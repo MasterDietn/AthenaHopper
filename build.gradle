@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.trist'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+// Hytale server SDK jar used for compilation (NOT shipped in this repo).
+// Provide it via:
+// - project property:    -PhytaleServerJar="C:\path\to\HytaleServer.jar"
+// - environment variable: HETALE_SERVER_JAR="C:\path\to\HytaleServer.jar"
+// - fallback default:    ../../Modell/HytaleServer.jar (your original layout)
+def defaultHytaleServerJar = '../../Modell/HytaleServer.jar'
+def hytaleServerJarPath = (
+        project.findProperty('hytaleServerJar') ? project.findProperty('hytaleServerJar').toString()
+                : (System.getenv('HETALE_SERVER_JAR') ?: defaultHytaleServerJar)
+)
+
+def hytaleServerJar = file(hytaleServerJarPath)
+if (!hytaleServerJar.exists()) {
+    throw new GradleException(
+            "HytaleServer.jar not found at: ${hytaleServerJarPath}. " +
+            "Provide it via -PhytaleServerJar=... or set env HETALE_SERVER_JAR=..."
+    )
+}
+
+dependencies {
+    // Only compile against the SDK; the produced mod jar should stay self-contained (resources included).
+    compileOnly files(hytaleServerJar)
+}
+
+// Your code uses Java features from 16+ (e.g. Stream#toList, instanceof pattern matching),
+// so we compile with Java 17.
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    // Hytale mods are loaded by the jar file sitting in UserData/Mods.
+    archiveBaseName = 'AthenaHopper'
+    archiveVersion = ''
+}
+

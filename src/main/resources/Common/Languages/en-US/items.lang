@@ -1,0 +1,6 @@
+server.customUI.athenaHopper.title=Athena Filtersystem
+server.customUI.athenaHopper.item=Item
+server.customUI.athenaHopper.selected=Ausgewählt
+server.customUI.athenaHopper.search=Search items
+server.customUI.athenaHopper.searchPlaceholder=PH
+server.customUI.athenaHopper.limitReached=You can only select 20

@@ -1,0 +1,29 @@
+{
+  "Input": [
+    {
+      "ItemId": "AthenaHopper",
+      "Quantity": 1
+    }
+  ],
+  "PrimaryOutput": {
+    "ItemId": "Ore_Iron",
+    "Quantity": 5
+  },
+  "Output": [
+    {
+      "ItemId": "Ore_Iron",
+      "Quantity": 5
+    },
+    {
+      "ItemId": "Ingredient_Stick",
+      "Quantity": 8
+    }
+  ],
+  "BenchRequirement": [
+    {
+      "Type": "Processing",
+      "Id": "Salvagebench"
+    }
+  ],
+  "TimeSeconds": 4
+}

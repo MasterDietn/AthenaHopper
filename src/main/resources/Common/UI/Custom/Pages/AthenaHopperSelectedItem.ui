@@ -1,0 +1,25 @@
+Button {
+  LayoutMode: Left;
+  Anchor: (Height: 32);
+  Padding: (Left: 6, Right: 14, Vertical: 4);
+  Style: (
+    Hovered: (
+      Background: #000000(0.2),
+    )
+  );
+
+  ItemIcon #SelectedIcon {
+    Anchor: (Width: 28, Height: 28);
+  }
+
+  Label #SelectedItem {
+    Padding: (Left: 6);
+    Style: (RenderBold: true);
+    FlexWeight: 1;
+  }
+
+  Label #SelectedItemSuffix {
+    Padding: (Left: 4);
+    Style: (RenderBold: true);
+  }
+}
