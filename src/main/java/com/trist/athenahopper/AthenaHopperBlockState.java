@@ -210,11 +210,6 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
         }
 
         if (aboveState != null) {
-            // If the output container is full (can't accept at least one allowed item),
-            // don't pull more items from above into this hopper.
-            if (!canFrontAcceptAnyAllowedItem(frontState)) {
-                return;
-            }
             boolean moved = pullFrom(aboveState);
             if (moved) {
                 cooldown = PUSH_COOLDOWN;
@@ -222,61 +217,7 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             return;
         }
 
-        // aboveState is null => we may collect dropped items in collectItems(world).
-        // Apply the same "output full" back-pressure to avoid accumulating items we can't output.
-        if (!canFrontAcceptAnyAllowedItem(frontState)) {
-            return;
-        }
         collectItems(world);
-    }
-
-    private boolean canFrontAcceptAnyAllowedItem(BlockState frontState) {
-        if (frontState == null) {
-            return true;
-        }
-
-        if (frontState instanceof ProcessingBenchState benchState) {
-            CombinedItemContainer benchContainer = benchState.getItemContainer();
-            ItemContainer input = benchContainer.getContainer(0);
-            ItemContainer output = benchContainer.getContainer(1);
-            CombinedItemContainer combined = new CombinedItemContainer(new ItemContainer[]{input, output});
-            return containerCanAcceptAnyAllowedItem(combined);
-        }
-
-        if (frontState instanceof ItemContainerState containerState) {
-            ItemContainer target = containerState.getItemContainer();
-            return containerCanAcceptAnyAllowedItem(target);
-        }
-
-        // Not an item container we can fill (or hopper isn't connected) => don't block pulling.
-        return true;
-    }
-
-    private boolean containerCanAcceptAnyAllowedItem(ItemContainer container) {
-        if (container == null) {
-            return false;
-        }
-
-        // We consider the container "accepting" if:
-        // 1) there is an empty slot, or
-        // 2) there is a partial stack (slot qty < max) of an item that is allowed by this hopper.
-        for (short i = 0; i < container.getCapacity(); i++) {
-            ItemStack slot = container.getItemStack(i);
-            if (slot == null || slot.isEmpty()) {
-                return true;
-            }
-
-            Item slotItem = slot.getItem();
-            if (slotItem == null) {
-                continue;
-            }
-
-            if (slot.getQuantity() < slotItem.getMaxStack() && isItemAllowed(slot)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     protected boolean pushTo(BlockState targetState) {
