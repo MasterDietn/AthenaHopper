@@ -1,4 +1,4 @@
-package com.trist.athenahopper;
+package com.athena.athenahopper;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.InteractionType;

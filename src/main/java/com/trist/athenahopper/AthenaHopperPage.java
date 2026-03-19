@@ -1,4 +1,4 @@
-package com.trist.athenahopper;
+package com.athena.athenahopper;
 
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
