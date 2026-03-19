@@ -34,8 +34,10 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.builtin.crafting.state.ProcessingBenchState;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 public class AthenaHopperBlockState extends ItemContainerState implements TickableBlockState {
     public static final Codec<AthenaHopperBlockState> CODEC;
@@ -53,6 +55,8 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
     protected boolean blacklistMode;
     protected boolean isEnabled;
     protected String[] filterItems;
+    private transient HashSet<String> filterItemsLowerCache;
+    private transient boolean filterItemsCacheValid;
 
     public AthenaHopperBlockState() {
         this.cooldown = 0;
@@ -61,6 +65,8 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
         this.blacklistMode = false;
         this.isEnabled = true;
         this.filterItems = new String[0];
+        this.filterItemsLowerCache = null;
+        this.filterItemsCacheValid = false;
     }
 
     public boolean isFilterMode() {
@@ -88,6 +94,7 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
 
     public void setFilterItems(String[] filterItems) {
         this.filterItems = filterItems == null ? new String[0] : filterItems;
+        this.filterItemsCacheValid = false;
         if (getChunk() != null) {
             markNeedsSave();
         }
@@ -95,6 +102,7 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
 
     private void setFilterItemsRaw(String[] filterItems) {
         this.filterItems = filterItems == null ? new String[0] : filterItems;
+        this.filterItemsCacheValid = false;
     }
 
     private boolean isCustom() {
@@ -364,6 +372,8 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
 
         List<Ref<EntityStore>> refs = entityChunk.getEntityReferences().stream().toList();
         Iterator<Ref<EntityStore>> iterator = refs.iterator();
+        // Precompute once per tick to reduce allocations.
+        Vector3d aboveCenter = new Vector3d(abovePos).add(0.5d, 0.0d, 0.5d);
         while (iterator.hasNext()) {
             Ref<EntityStore> ref = iterator.next();
             Store<EntityStore> store = ref.getStore();
@@ -387,7 +397,6 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             }
 
             Vector3d itemPos = transform.getPosition();
-            Vector3d aboveCenter = new Vector3d(abovePos).add(0.5d, 0.0d, 0.5d);
             boolean closeEnough = itemPos.clone().subtract(aboveCenter).closeToZero(0.5d);
             if (!closeEnough) {
                 continue;
@@ -472,16 +481,40 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
         if (allowed.length == 0) {
             return blacklistMode;
         }
+        ensureFilterItemsLowerCache();
 
         String id = stack.getItemId();
-        boolean contains = false;
-        for (String allowedId : allowed) {
-            if (allowedId != null && id != null && (allowedId.equals(id) || allowedId.equalsIgnoreCase(id))) {
-                contains = true;
-                break;
+        if (id == null) {
+            // contains=false => blacklistMode ? true : false (matches previous behavior)
+            return blacklistMode;
+        }
+
+        boolean contains = filterItemsLowerCache != null
+                && filterItemsLowerCache.contains(id.toLowerCase(Locale.ROOT));
+        return blacklistMode ? !contains : contains;
+    }
+
+    private void ensureFilterItemsLowerCache() {
+        if (filterItemsCacheValid && filterItemsLowerCache != null) {
+            return;
+        }
+
+        HashSet<String> set = new HashSet<>();
+        if (filterItems != null) {
+            for (String allowedId : filterItems) {
+                if (allowedId == null) {
+                    continue;
+                }
+                String trimmed = allowedId.trim();
+                if (trimmed.isEmpty()) {
+                    continue;
+                }
+                set.add(trimmed.toLowerCase(Locale.ROOT));
             }
         }
-        return blacklistMode ? !contains : contains;
+
+        this.filterItemsLowerCache = set;
+        this.filterItemsCacheValid = true;
     }
 
     static {
