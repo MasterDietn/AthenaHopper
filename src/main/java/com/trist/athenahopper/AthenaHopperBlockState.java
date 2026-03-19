@@ -264,7 +264,11 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
 
             Item slotItem = slot.getItem();
             if (slotItem != null && slot.getQuantity() < slotItem.getMaxStack()) {
-                return true;
+                // Count space in partially filled slots only if the hopper could actually push
+                // that same item type into the output container (based on current filter mode).
+                if (isItemAllowed(slot)) {
+                    return true;
+                }
             }
         }
 
