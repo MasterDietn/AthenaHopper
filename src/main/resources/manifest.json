@@ -1,6 +1,6 @@
 {
-  "Group": "Athena",
-  "Name": "Athena",
+  "Group": "AthenaHopper",
+  "Name": "AthenaHopper",
   "Version": "1.0.0",
   "Description": "Improved AthenaHopper with selectable item filtering via custom UI.",
   "Authors": [
