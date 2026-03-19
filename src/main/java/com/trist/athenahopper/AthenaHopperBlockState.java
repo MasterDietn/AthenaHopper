@@ -209,7 +209,14 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             }
         }
 
+        // Back-pressure: only pull from above / collect drops if the output container
+        // can still accept at least one more allowed item (empty slot or partial allowed stack).
+        boolean outputAcceptsAnyAllowedItem = canFrontAcceptAnyAllowedItem(frontState);
+
         if (aboveState != null) {
+            if (!outputAcceptsAnyAllowedItem) {
+                return;
+            }
             boolean moved = pullFrom(aboveState);
             if (moved) {
                 cooldown = PUSH_COOLDOWN;
@@ -217,7 +224,57 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             return;
         }
 
+        if (!outputAcceptsAnyAllowedItem) {
+            return;
+        }
         collectItems(world);
+    }
+
+    private boolean canFrontAcceptAnyAllowedItem(BlockState frontState) {
+        if (frontState == null) {
+            return true;
+        }
+
+        if (frontState instanceof ProcessingBenchState benchState) {
+            CombinedItemContainer benchContainer = benchState.getItemContainer();
+            ItemContainer input = benchContainer.getContainer(0);
+            ItemContainer output = benchContainer.getContainer(1);
+            return containerCanAcceptAnyAllowedItem(input) || containerCanAcceptAnyAllowedItem(output);
+        }
+
+        if (frontState instanceof ItemContainerState containerState) {
+            ItemContainer target = containerState.getItemContainer();
+            return containerCanAcceptAnyAllowedItem(target);
+        }
+
+        // Unknown target type => don't block.
+        return true;
+    }
+
+    private boolean containerCanAcceptAnyAllowedItem(ItemContainer container) {
+        if (container == null) {
+            return false;
+        }
+
+        for (short i = 0; i < container.getCapacity(); i++) {
+            ItemStack slot = container.getItemStack(i);
+            if (slot == null || slot.isEmpty()) {
+                // Empty slot => can accept at least one allowed item.
+                return true;
+            }
+
+            Item slotItem = slot.getItem();
+            if (slotItem == null) {
+                continue;
+            }
+
+            // Partially filled stacks only count if the hopper would accept that same item type.
+            if (slot.getQuantity() < slotItem.getMaxStack() && isItemAllowed(slot)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected boolean pushTo(BlockState targetState) {
