@@ -209,7 +209,15 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             }
         }
 
+        // Back-pressure: if the output container is full, do not pull items from above
+        // and do not collect dropped item-entities. This prevents "storing" items we
+        // cannot push out anymore.
+        boolean outputAcceptsAny = canFrontAcceptAnyItem(frontState);
+
         if (aboveState != null) {
+            if (!outputAcceptsAny) {
+                return;
+            }
             boolean moved = pullFrom(aboveState);
             if (moved) {
                 cooldown = PUSH_COOLDOWN;
@@ -217,7 +225,50 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             return;
         }
 
+        if (!outputAcceptsAny) {
+            return;
+        }
         collectItems(world);
+    }
+
+    private boolean canFrontAcceptAnyItem(BlockState frontState) {
+        if (frontState == null) {
+            return true;
+        }
+
+        if (frontState instanceof ProcessingBenchState benchState) {
+            CombinedItemContainer benchContainer = benchState.getItemContainer();
+            ItemContainer output = benchContainer.getContainer(1);
+            return containerCanAcceptAnyItem(output);
+        }
+
+        if (frontState instanceof ItemContainerState containerState) {
+            ItemContainer target = containerState.getItemContainer();
+            return containerCanAcceptAnyItem(target);
+        }
+
+        // Unknown target type => don't block.
+        return true;
+    }
+
+    private boolean containerCanAcceptAnyItem(ItemContainer container) {
+        if (container == null) {
+            return false;
+        }
+
+        for (short i = 0; i < container.getCapacity(); i++) {
+            ItemStack slot = container.getItemStack(i);
+            if (slot == null || slot.isEmpty()) {
+                return true;
+            }
+
+            Item slotItem = slot.getItem();
+            if (slotItem != null && slot.getQuantity() < slotItem.getMaxStack()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected boolean pushTo(BlockState targetState) {
