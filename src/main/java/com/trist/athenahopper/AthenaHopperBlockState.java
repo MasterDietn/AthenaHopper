@@ -261,6 +261,25 @@ public class AthenaHopperBlockState extends ItemContainerState implements Tickab
             return;
         }
 
+        // Fast pre-check: if the hopper container has no empty slot and all stacks are already at max,
+        // then collecting new drops cannot change anything (skip the entity scan for performance).
+        boolean canFitAny = false;
+        for (short i = 0; i < container.getCapacity(); i++) {
+            ItemStack slot = container.getItemStack(i);
+            if (slot == null || slot.isEmpty()) {
+                canFitAny = true;
+                break;
+            }
+            Item slotItem = slot.getItem();
+            if (slotItem != null && slot.getQuantity() < slotItem.getMaxStack()) {
+                canFitAny = true;
+                break;
+            }
+        }
+        if (!canFitAny) {
+            return;
+        }
+
         EntityChunk entityChunk = chunk.getEntityChunk();
         if (entityChunk == null) {
             return;
