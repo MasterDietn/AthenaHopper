@@ -106,11 +106,22 @@ $C.@DecoratedContainer {
 
     Group #InfoRow {
       LayoutMode: Left;
-      Anchor: (Top: 6, Height: 28);
+      Anchor: (Top: 6, Height: 46);
 
       Label #InfoLabel {
         FlexWeight: 1;
         Style: (TextColor: #ffffff(0.8));
+      }
+    }
+
+    Group #EmptyState {
+      FlexWeight: 1;
+      LayoutMode: Left;
+      Padding: (Horizontal: 14, Vertical: 10);
+      Label {
+        Text: "Gib Text in die Suche ein, um Items zu sehen";
+        Style: (TextColor: #ffffff(0.6));
+        FlexWeight: 1;
       }
     }
 

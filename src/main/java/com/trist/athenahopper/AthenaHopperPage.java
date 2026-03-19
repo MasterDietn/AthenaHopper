@@ -44,6 +44,10 @@ public class AthenaHopperPage extends InteractiveCustomUIPage<AthenaHopperPage.A
     private static final String CLEAR_BUTTON_SELECTOR = "#ClearButton";
     private static final String UNDO_BUTTON_SELECTOR = "#UndoButton";
     private static final String MODE_BUTTON_ROOT_SELECTOR = "#ModeButton";
+    private static final String EMPTY_STATE_SELECTOR = "#EmptyState";
+    private static final String HELP_TEXT =
+            "Buttons: Modus = Erlauben/Blockieren; Auswahl leeren = Filter löschen; Rückgängig = letzte Änderung rückgängig\n" +
+                    "Suche: listet nur passende Items.";
 
     private final UUID worldId;
     private final Vector3i position;
@@ -95,7 +99,12 @@ public class AthenaHopperPage extends InteractiveCustomUIPage<AthenaHopperPage.A
         commandBuilder.set(SELECTED_COUNT_SELECTOR, buildSelectedCountText(selectedCount));
         commandBuilder.set(SEARCH_INPUT_SELECTOR, searchTerm == null ? "" : searchTerm);
         commandBuilder.set(MODE_STATUS_SELECTOR, buildModeStatusText());
-        commandBuilder.set(INFO_LABEL_SELECTOR, "");
+        commandBuilder.set(INFO_LABEL_SELECTOR, HELP_TEXT);
+
+        boolean showEmptyState = searchTerm == null || searchTerm.isBlank();
+        commandBuilder.set(ELEMENT_LIST_SELECTOR + ".Visible", !showEmptyState);
+        commandBuilder.set(EMPTY_STATE_SELECTOR + ".Visible", showEmptyState);
+
         buildSelectedList(commandBuilder, funnelState);
 
         for (int i = 0; i < items.size(); i++) {
@@ -504,6 +513,10 @@ public class AthenaHopperPage extends InteractiveCustomUIPage<AthenaHopperPage.A
         UICommandBuilder updates = new UICommandBuilder();
 
         this.items.sort(this.sortMode.getComparator());
+        boolean showEmptyState = searchTerm == null || searchTerm.isBlank();
+        updates.set(ELEMENT_LIST_SELECTOR + ".Visible", !showEmptyState);
+        updates.set(EMPTY_STATE_SELECTOR + ".Visible", showEmptyState);
+
         for (int i = 0; i < items.size(); i++) {
             Item item = items.get(i);
             String selector = elementSelector(i);
